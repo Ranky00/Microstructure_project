@@ -1,0 +1,75 @@
+"""
+This script defines functions to extract radiomic features from a NIfTI medical image
+and save them to a CSV file.
+
+**Input:**
+
+* **Image Path (str):** Path to the NIfTI image file. This path is typically provided
+  as a string variable within the code (`image_path`). You'll need to replace the
+  placeholder path (e.g., '/Users/demoranky/documents/check_ADNI_old/002_S_0413label_120_.nii.gz')
+  with the actual location of your NIfTI image file.
+
+**Output:**
+
+1. **Extracted Radiomic Features (dict):** The code extracts a large number of radiomic
+   features from the image using the PyRadiomics library. These features quantify
+   various textural and intensity characteristics of the image. The specific features
+   extracted depend on the configuration settings in PyRadiomics (potentially hundreds
+   of features by default). The extracted features are stored in a dictionary format
+   within the code.
+
+2. **Data Frame (pd.DataFrame):** The code converts the extracted features dictionary
+   into a pandas DataFrame with a single row. Each column in the DataFrame represents
+   a specific radiomic feature and its corresponding value.
+
+3. **CSV File (str):** Finally, the code saves the DataFrame containing the extracted
+   features to a CSV file at the specified output path (`output_csv_path`). This CSV
+   file provides a tabular representation of the radiomic features calculated for
+   your image.
+"""
+
+
+import numpy as np
+import pandas as pd
+import nibabel as nib
+import SimpleITK as sitk
+from radiomics import featureextractor
+
+def extract_radiomics_features(image_path):
+    # Initialize PyRadiomics feature extractor
+    extractor = featureextractor.RadiomicsFeatureExtractor()
+    extractor.enableAllFeatures()  # Enable all features
+
+    # Load NIfTI image
+    image_nifti = nib.load(image_path)
+    image_data = image_nifti.get_fdata()
+
+    # Convert NIfTI image to SimpleITK image
+    sitk_image = sitk.GetImageFromArray(image_data)
+
+    # Create a mask for the entire image
+    mask_data = np.ones_like(image_data)
+    sitk_mask = sitk.GetImageFromArray(mask_data)
+
+    # Extract radiomics features
+    features_radiomic = extractor.execute(sitk_image, sitk_mask)
+
+    # Convert features to DataFrame
+    features_df = pd.DataFrame([features_radiomic])
+
+    return features_df
+
+def save_features_to_csv(features_df, output_path):
+    features_df.to_csv(output_path, index=False)
+    print(f"Radiomic features saved to {output_path}")
+
+if __name__ == "__main__":
+    # Define the image path and output CSV file path
+    image_path = '/Users/demoranky/documents/check_ADNI_old/002_S_0413label_120_.nii.gz'
+    output_csv_path = '/Users/demoranky/documents/radiomic_and_deep_learning_features.csv'
+
+    # Extract radiomics features
+    features_df = extract_radiomics_features(image_path)
+
+    # Save the extracted features to a CSV file
+    save_features_to_csv(features_df, output_csv_path)
