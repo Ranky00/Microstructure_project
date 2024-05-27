@@ -1,0 +1,229 @@
+import SimpleITK as sitk
+from scipy import stats
+import numpy as np
+import csv
+import os
+
+def load_nii_image(filepath):
+    """Loads a nii.gz image using SimpleITK."""
+    reader = sitk.ImageFileReader()
+    reader.SetFileName(filepath)
+    return reader.Execute()
+
+def calculate_texture_features(image):
+    """Calculates various texture features for a 3D image.
+
+    Args:
+        image: A SimpleITK image object representing the 3D image.
+
+    Returns:
+        A dictionary containing various texture features.
+    """
+    image_data = sitk.GetArrayFromImage(image)
+    flattened_data = image_data.flatten()
+
+    # Statistical features
+    entropy = stats.entropy(flattened_data)
+    skewness = stats.skew(flattened_data)
+    kurtosis = stats.kurtosis(flattened_data)
+
+    # Intensity-based features
+    sum_average = np.mean(image_data)
+    contrast = np.var(image_data)
+    sum_variance = np.sum(np.var(image_data, axis=0))  # Variance across all slices
+
+    # Statistical feature: Inverse Difference Moment (IDM)
+    idm = 1.0 / (entropy + 1e-7)  # Avoid division by zero
+
+    # Intensity-based feature: Total Energy
+    total_energy = np.sum(image_data**2)
+
+    features = {
+        'entropy': entropy,
+        'skewness': skewness,
+        'kurtosis': kurtosis,
+        'sum_average': sum_average,
+        'contrast': contrast,
+        'sum_variance': sum_variance,
+        'Inverse different moment': idm,
+        'Total energy': total_energy,
+    }
+    return features
+
+def save_features_to_csv(features, output_filename, image_root):
+    """Saves texture features to a CSV file, including the image root.
+
+    Args:
+        features: A dictionary containing texture features.
+        output_filename: Path to the output CSV file.
+        image_root: The root filename (without extension) of the processed image.
+    """
+    with open(output_filename, 'a', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+
+        # Write header row with feature names only on the first iteration
+        if os.path.getsize(output_filename) == 0:
+            writer.writerow(['Image_Root'] + list(features.keys()))
+
+        # Create a new dictionary with image root and features
+        combined_features = {'Image_Root': image_root}
+        combined_features.update(features)
+
+        writer.writerow(combined_features.values())
+
+def process_images_for_x_values(image_folder, output_folder, x_values):
+    """Processes nii.gz images for a list of x values and saves features to CSV files.
+
+    Args:
+        image_folder: Directory containing the nii.gz images.
+        output_folder: Directory to save the CSV files.
+        x_values: List of x values to process.
+    """
+    for x in x_values:
+        output_filename = os.path.join(output_folder, f"{x}_WM.csv")
+
+        for filename in os.listdir(image_folder):
+            if filename.endswith(f"labelWM_{x}_.nii.gz"):
+                # Extract image root (filename without extension)
+                image_root = os.path.splitext(filename)[0]
+
+                image_path = os.path.join(image_folder, filename)
+
+                # Load image, calculate features, and save to CSV
+                image = load_nii_image(image_path)
+                texture_features = calculate_texture_features(image)
+                save_features_to_csv(texture_features, output_filename, image_root)
+
+        print(f"Texture features for images with x={x} saved to CSV file: {output_filename}")
+
+# Define the directory containing your nii.gz images
+#image_folder = "/Users/demoranky/documents/check_pro1"  # Replace with your path
+#image_folder = "/Users/demoranky/documents/check_pro2"  # Replace with your path
+image_folder = "/Users/demoranky/documents/check_pro1/testingE"  # Replace with your path
+# Define output directory for CSV files
+output_folder = "/Users/demoranky/documents/water"  # Replace with your path
+
+# Define a list of x values to process
+#x_values = [101, 103, 105, 107, 109, 113, 115, 117, 119, 121, 123, 125, 129, 133, 135, 137, 139, 141, 143, 145, 147, 149, 151, 153, 155, 157, 161, 163, 165, 167, 169, 171, 173, 175, 177, 179, 181, 183, 185, 191]  # Add more x values as needed
+#x_values = [193, 195, 197, 199, 201, 203, 205, 207]  # Add more x values as needed
+x_values = [32, 48]  # Add more x values as needed
+# Process images for each x value
+process_images_for_x_values(image_folder, output_folder, x_values)
+
+
+
+
+
+
+
+import SimpleITK as sitk
+from scipy import stats
+import numpy as np
+import csv
+import os
+
+def load_nii_image(filepath):
+    """Loads a nii.gz image using SimpleITK."""
+    reader = sitk.ImageFileReader()
+    reader.SetFileName(filepath)
+    return reader.Execute()
+
+def calculate_texture_features(image):
+    """Calculates various texture features for a 3D image.
+
+    Args:
+        image: A SimpleITK image object representing the 3D image.
+
+    Returns:
+        A dictionary containing various texture features.
+    """
+    image_data = sitk.GetArrayFromImage(image)
+    flattened_data = image_data.flatten()
+
+    # Statistical features
+    entropy = stats.entropy(flattened_data)
+    skewness = stats.skew(flattened_data)
+    kurtosis = stats.kurtosis(flattened_data)
+
+    # Intensity-based features
+    sum_average = np.mean(image_data)
+    contrast = np.var(image_data)
+    sum_variance = np.sum(np.var(image_data, axis=0))  # Variance across all slices
+
+    # Statistical feature: Inverse Difference Moment (IDM)
+    idm = 1.0 / (entropy + 1e-7)  # Avoid division by zero
+
+    # Intensity-based feature: Total Energy
+    total_energy = np.sum(image_data**2)
+
+    features = {
+        'entropy': entropy,
+        'skewness': skewness,
+        'kurtosis': kurtosis,
+        'sum_average': sum_average,
+        'contrast': contrast,
+        'sum_variance': sum_variance,
+        'Inverse different moment': idm,
+        'Total energy': total_energy,
+    }
+    return features
+
+def save_features_to_csv(features, output_filename, image_root):
+    """Saves texture features to a CSV file, including the image root.
+
+    Args:
+        features: A dictionary containing texture features.
+        output_filename: Path to the output CSV file.
+        image_root: The root filename (without extension) of the processed image.
+    """
+    with open(output_filename, 'a', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+
+        # Write header row with feature names only on the first iteration
+        if os.path.getsize(output_filename) == 0:
+            writer.writerow(['Image_Root'] + list(features.keys()))
+
+        # Create a new dictionary with image root and features
+        combined_features = {'Image_Root': image_root}
+        combined_features.update(features)
+
+        writer.writerow(combined_features.values())
+
+def process_images_for_x_values(image_folder, output_folder, x_values):
+    """Processes nii.gz images for a list of x values and saves features to CSV files.
+
+    Args:
+        image_folder: Directory containing the nii.gz images.
+        output_folder: Directory to save the CSV files.
+        x_values: List of x values to process.
+    """
+    for x in x_values:
+        output_filename = os.path.join(output_folder, f"{x}_GM.csv")
+
+        for filename in os.listdir(image_folder):
+            if filename.endswith(f"label_{x}_.nii.gz"):
+                # Extract image root (filename without extension)
+                image_root = os.path.splitext(filename)[0]
+
+                image_path = os.path.join(image_folder, filename)
+
+                # Load image, calculate features, and save to CSV
+                image = load_nii_image(image_path)
+                texture_features = calculate_texture_features(image)
+                save_features_to_csv(texture_features, output_filename, image_root)
+
+        print(f"Texture features for images with x={x} saved to CSV file: {output_filename}")
+
+# Define the directory containing your nii.gz images
+#image_folder = "/Users/demoranky/documents/check_pro1"  # Replace with your path
+#image_folder = "/Users/demoranky/documents/check_pro2"  # Replace with your path
+image_folder = "/Users/demoranky/documents/check_pro1/testingE"  # Replace with your path
+# Define output directory for CSV files
+output_folder = "/Users/demoranky/documents/water"  # Replace with your path
+
+# Define a list of x values to process
+#x_values = [101, 103, 105, 107, 109, 113, 115, 117, 119, 121, 123, 125, 129, 133, 135, 137, 139, 141, 143, 145, 147, 149, 151, 153, 155, 157, 161, 163, 165, 167, 169, 171, 173, 175, 177, 179, 181, 183, 185, 191]  # Add more x values as needed
+x_values = [193, 195, 197, 199, 201, 203, 205, 207]  # Add more x values as needed
+x_values = [32, 48]  # Add more x values as needed
+# Process images for each x value
+process_images_for_x_values(image_folder, output_folder, x_values)
